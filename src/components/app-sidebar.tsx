@@ -35,15 +35,15 @@ const data = {
       items: [
         {
           title: "Add Expense",
-          url: "#",
+          url: "/new",
         },
         {
           title: "Expense History",
-          url: "#",
+          url: "/history",
         },
         {
           title: "Categories",
-          url: "#",
+          url: "/categories",
         },
       ],
     },
