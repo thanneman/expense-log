@@ -1,6 +1,7 @@
 import { Layout } from "@/components/layout"
 import { Button } from "@/components/ui/button"
 import { Plus, BarChart3 } from "lucide-react"
+import Link from "next/link"
 
 export default function Page() {
   return (
@@ -30,10 +31,12 @@ export default function Page() {
             Record a new expense to keep track of your spending. 
             Categorize it and add notes for better organization.
           </p>
-          <Button className="w-full" size="lg">
-            <Plus className="h-4 w-4" />
-            Add Expense
-          </Button>
+          <Link href="/new">
+            <Button className="w-full" size="lg">
+              <Plus className="h-4 w-4" />
+              Add Expense
+            </Button>
+          </Link>
         </div>
 
         {/* View History Card */}
@@ -48,10 +51,12 @@ export default function Page() {
             Review your expense history, analyze spending patterns, 
             and get insights into your financial habits.
           </p>
-          <Button variant="outline" className="w-full" size="lg">
-            <BarChart3 className="h-4 w-4" />
-            View History
-          </Button>
+          <Link href="/history">
+            <Button variant="outline" className="w-full" size="lg">
+              <BarChart3 className="h-4 w-4" />
+              View History
+            </Button>
+          </Link>
         </div>
       </div>
 

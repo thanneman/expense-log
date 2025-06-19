@@ -1,5 +1,6 @@
 import * as React from "react"
 import Link from "next/link"
+import { useRouter } from "next/router"
 
 import {
   Sidebar,
@@ -25,7 +26,6 @@ const data = {
         {
           title: "Dashboard",
           url: "/",
-          isActive: true,
         },
       ],
     },
@@ -51,6 +51,8 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const router = useRouter()
+
   return (
     <Sidebar {...props}>
       <SidebarHeader>
@@ -77,7 +79,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <SidebarMenu>
                 {item.items.map((item) => (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={item.isActive}>
+                    <SidebarMenuButton 
+                      asChild 
+                      isActive={router.pathname === item.url}
+                    >
                       <Link href={item.url}>{item.title}</Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
