@@ -18,6 +18,36 @@ export default function NewExpensePage() {
 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [touched, setTouched] = useState<Record<string, boolean>>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const formatAmount = (value: string): string => {
+    // Remove all non-numeric characters except decimal point
+    const cleanValue = value.replace(/[^\d.]/g, '')
+    
+    // Prevent multiple decimal points
+    const parts = cleanValue.split('.')
+    if (parts.length > 2) {
+      return parts[0] + '.' + parts.slice(1).join('')
+    }
+    
+    // Limit to 2 decimal places
+    if (parts.length === 2 && parts[1].length > 2) {
+      return parts[0] + '.' + parts[1].substring(0, 2)
+    }
+    
+    // Always format to 2 decimal places
+    if (parts.length === 1) {
+      // No decimal point, add .00
+      return cleanValue + '.00'
+    } else if (parts.length === 2) {
+      // Has decimal point, pad to 2 decimal places
+      const wholePart = parts[0] || '0'
+      const decimalPart = parts[1].padEnd(2, '0').substring(0, 2)
+      return wholePart + '.' + decimalPart
+    }
+    
+    return cleanValue
+  }
 
   const validateField = (field: string, value: string): string => {
     switch (field) {
@@ -37,7 +67,6 @@ export default function NewExpensePage() {
       
       case "date":
         if (!value) return "Date is required"
-        
         const todayAZ = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Phoenix' })
         
         if (value > todayAZ) return "Date cannot be in the future"
@@ -74,7 +103,19 @@ export default function NewExpensePage() {
       [field]: true
     }))
 
-    const error = validateField(field, formData[field as keyof typeof formData])
+    let value = formData[field as keyof typeof formData]
+    
+    // Format amount to 2 decimal places on blur
+    if (field === "amount" && value) {
+      const formattedValue = formatAmount(value)
+      setFormData(prev => ({
+        ...prev,
+        [field]: formattedValue
+      }))
+      value = formattedValue
+    }
+
+    const error = validateField(field, value)
     setErrors(prev => ({
       ...prev,
       [field]: error
@@ -104,17 +145,28 @@ export default function NewExpensePage() {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     if (!validateForm()) {
       return
     }
 
-    // TODO: Implement expense saving logic
-    console.log("Expense data:", formData)
-    // For now, just redirect back to home
-    router.push("/")
+    setIsSubmitting(true)
+    
+    try {
+      // TODO: Implement expense saving logic
+      console.log("Expense data:", formData)
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      // For now, just redirect back to home
+      router.push("/")
+    } catch (error) {
+      console.error("Error saving expense:", error)
+      // TODO: Show error message to user
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const categories = [
@@ -163,6 +215,7 @@ export default function NewExpensePage() {
               value={formData.title}
               onChange={(e) => handleInputChange("title", e.target.value)}
               onBlur={() => handleBlur("title")}
+              className={errors.title ? "border-red-500 focus-visible:border-red-500" : ""}
               required
             />
             {errors.title && <p className="text-sm text-red-500 mt-1">{errors.title}</p>}
@@ -173,13 +226,12 @@ export default function NewExpensePage() {
             <Label htmlFor="amount">Amount</Label>
             <Input
               id="amount"
-              type="number"
-              step="0.01"
-              min="0"
+              type="text"
               placeholder="0.00"
               value={formData.amount}
               onChange={(e) => handleInputChange("amount", e.target.value)}
               onBlur={() => handleBlur("amount")}
+              className={errors.amount ? "border-red-500 focus-visible:border-red-500" : ""}
               required
             />
             {errors.amount && <p className="text-sm text-red-500 mt-1">{errors.amount}</p>}
@@ -194,6 +246,7 @@ export default function NewExpensePage() {
               value={formData.date}
               onChange={(e) => handleInputChange("date", e.target.value)}
               onBlur={() => handleBlur("date")}
+              className={errors.date ? "border-red-500 focus-visible:border-red-500" : ""}
               required
             />
             {errors.date && <p className="text-sm text-red-500 mt-1">{errors.date}</p>}
@@ -204,7 +257,9 @@ export default function NewExpensePage() {
             <Label htmlFor="category">Category</Label>
             <select
               id="category"
-              className="flex h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+              className={`flex h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:ring-ring/50 focus-visible:ring-[3px] ${
+                errors.category ? "border-red-500 focus-visible:border-red-500" : "focus-visible:border-ring"
+              }`}
               value={formData.category}
               onChange={(e) => handleInputChange("category", e.target.value)}
               onBlur={() => handleBlur("category")}
@@ -239,15 +294,26 @@ export default function NewExpensePage() {
               type="submit"
               size="lg"
               className="flex-1"
+              disabled={isSubmitting}
             >
-              <Save className="h-4 w-4" />
-              Save Expense
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Expense
+                </>
+              )}
             </Button>
             <Button
               type="button"
               variant="outline"
               size="lg"
               onClick={() => router.back()}
+              disabled={isSubmitting}
             >
               Cancel
             </Button>
