@@ -2,7 +2,7 @@ import { Layout } from "@/components/layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ArrowLeft, Save } from "lucide-react"
+import { Save } from "lucide-react"
 import { useState } from "react"
 import { useRouter } from "next/router"
 
@@ -186,16 +186,8 @@ export default function NewExpensePage() {
     <Layout>
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.back()}
-          className="h-8 w-8"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Add New Expense</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Add New Expense</h1>
           <p className="text-muted-foreground">
             Record a new expense to track your spending
           </p>
