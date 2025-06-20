@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label"
 import { Save } from "lucide-react"
 import { useState } from "react"
 import { useRouter } from "next/router"
+import { getCategoryNames } from "@/lib/category-colors"
 
 export default function NewExpensePage() {
   const router = useRouter()
@@ -169,18 +170,7 @@ export default function NewExpensePage() {
     }
   }
 
-  const categories = [
-    "Food & Dining",
-    "Transportation",
-    "Shopping",
-    "Entertainment",
-    "Healthcare",
-    "Utilities",
-    "Housing",
-    "Education",
-    "Travel",
-    "Other"
-  ]
+  const categories = getCategoryNames()
 
   return (
     <Layout>
@@ -259,7 +249,7 @@ export default function NewExpensePage() {
             >
               <option value="">Select a category</option>
               {categories.map((category) => (
-                <option key={category} value={category}>
+                <option key={category} value={category} className="flex items-center gap-2">
                   {category}
                 </option>
               ))}

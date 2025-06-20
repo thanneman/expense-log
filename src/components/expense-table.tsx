@@ -16,6 +16,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { CategoryBadge } from "@/components/ui/category-badge"
+import { getCategoryColor } from "@/lib/category-colors"
 import { ChevronDown, ChevronUp, MoreHorizontal, Search, Filter, Calendar, BarChart3 } from "lucide-react"
 
 // Expense type definition
@@ -206,9 +208,7 @@ export function ExpenseTable({ expenses, onEdit, onDelete }: ExpenseTableProps) 
       <TableCell className="font-mono">{formatCurrency(expense.amount)}</TableCell>
       <TableCell>{formatDate(expense.date)}</TableCell>
       <TableCell>
-        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-muted">
-          {expense.category}
-        </span>
+        <CategoryBadge category={expense.category} />
       </TableCell>
       <TableCell className="max-w-[200px] truncate">
         {expense.note || "-"}
@@ -272,17 +272,22 @@ export function ExpenseTable({ expenses, onEdit, onDelete }: ExpenseTableProps) 
               }}>
                 All Categories
               </DropdownMenuItem>
-              {categories.map((category) => (
-                <DropdownMenuItem
-                  key={category}
-                  onClick={() => {
-                    setCategoryFilter(category)
-                    setCurrentPage(1)
-                  }}
-                >
-                  {category}
-                </DropdownMenuItem>
-              ))}
+              {categories.map((category) => {
+                const color = getCategoryColor(category)
+                return (
+                  <DropdownMenuItem
+                    key={category}
+                    onClick={() => {
+                      setCategoryFilter(category)
+                      setCurrentPage(1)
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    <div className={`w-2 h-2 rounded-full ${color.bgColor.replace('bg-', 'bg-').replace('/30', '')} border ${color.borderColor}`} />
+                    {category}
+                  </DropdownMenuItem>
+                )
+              })}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -407,12 +412,21 @@ export function ExpenseTable({ expenses, onEdit, onDelete }: ExpenseTableProps) 
                 Object.entries(groupedExpenses).map(([groupKey, groupExpenses]) => {
                   const groupTotal = groupExpenses.reduce((sum, expense) => sum + expense.amount, 0)
                   
+                  // Get category color if grouping by category
+                  const categoryColor = groupBy === 'category' ? getCategoryColor(groupKey) : null
+                  
                   return (
                     <React.Fragment key={groupKey}>
                       {/* Group Header */}
-                      <TableRow className="bg-muted/30">
-                        <TableCell colSpan={4} className="font-semibold">
-                          {groupKey}
+                      <TableRow className={`${groupBy === 'category' ? `${categoryColor?.bgColor} ${categoryColor?.borderColor}` : 'bg-muted/30'}`}>
+                        <TableCell colSpan={4} className={`font-semibold ${groupBy === 'category' ? categoryColor?.textColor : ''}`}>
+                          {groupBy === 'category' && (
+                            <div className="flex items-center gap-2">
+                              <div className={`w-3 h-3 rounded-full ${categoryColor?.bgColor.replace('bg-', 'bg-').replace('/30', '')} border ${categoryColor?.borderColor}`} />
+                              {groupKey}
+                            </div>
+                          )}
+                          {groupBy !== 'category' && groupKey}
                         </TableCell>
                         <TableCell className="font-semibold text-right">
                           {formatCurrency(groupTotal)}
