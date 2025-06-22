@@ -21,7 +21,17 @@ export interface Expense {
   amount: number
   date: string
   category: string
+  category_id?: string
   note?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface Category {
+  id: string
+  name: string
+  color: string
+  icon?: string
   created_at: string
   updated_at: string
 }
@@ -31,6 +41,7 @@ export interface CreateExpenseData {
   amount: number
   date: string
   category: string
+  category_id?: string
   note?: string
 }
 
@@ -39,5 +50,18 @@ export interface UpdateExpenseData {
   amount?: number
   date?: string
   category?: string
+  category_id?: string
   note?: string
+}
+
+export interface CreateCategoryData {
+  name: string
+  color: string
+  icon?: string
+}
+
+export interface UpdateCategoryData {
+  name?: string
+  color?: string
+  icon?: string
 } 
