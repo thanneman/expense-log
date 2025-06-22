@@ -2,8 +2,18 @@ import { Layout } from "@/components/layout"
 import { Button } from "@/components/ui/button"
 import { Plus, BarChart3 } from "lucide-react"
 import Link from "next/link"
+import { useExpenses } from "@/hooks/use-expenses"
 
 export default function Page() {
+  const { stats, loading } = useExpenses()
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount)
+  }
+
   return (
     <Layout>
       {/* Hero Section */}
@@ -63,15 +73,21 @@ export default function Page() {
       {/* Quick Stats */}
       <div className="grid gap-4 md:grid-cols-3 max-w-4xl mx-auto w-full">
         <div className="bg-muted/50 rounded-lg p-4 text-center">
-          <div className="text-2xl font-bold">$0</div>
+          <div className="text-2xl font-bold">
+            {loading ? "..." : formatCurrency(stats.totalAmount)}
+          </div>
           <div className="text-sm text-muted-foreground">Total Expenses</div>
         </div>
         <div className="bg-muted/50 rounded-lg p-4 text-center">
-          <div className="text-2xl font-bold">0</div>
+          <div className="text-2xl font-bold">
+            {loading ? "..." : stats.transactionCount}
+          </div>
           <div className="text-sm text-muted-foreground">Transactions</div>
         </div>
         <div className="bg-muted/50 rounded-lg p-4 text-center">
-          <div className="text-2xl font-bold">$0</div>
+          <div className="text-2xl font-bold">
+            {loading ? "..." : formatCurrency(stats.monthlyAverage)}
+          </div>
           <div className="text-sm text-muted-foreground">Monthly Average</div>
         </div>
       </div>

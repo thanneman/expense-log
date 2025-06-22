@@ -19,8 +19,9 @@ import {
 import { CategoryBadge } from "@/components/ui/category-badge"
 import { getCategoryColor } from "@/lib/category-colors"
 import { ChevronDown, ChevronUp, MoreHorizontal, Search, Filter, Calendar, BarChart3 } from "lucide-react"
+import type { Expense as SupabaseExpense } from "@/lib/supabase"
 
-// Expense type definition
+// Expense type definition - using Supabase type with mapping
 export interface Expense {
   id: string
   title: string
@@ -30,6 +31,17 @@ export interface Expense {
   note?: string
   createdAt: string
 }
+
+// Helper function to map Supabase expense to component expense
+export const mapSupabaseExpense = (expense: SupabaseExpense): Expense => ({
+  id: expense.id,
+  title: expense.title,
+  amount: expense.amount,
+  date: expense.date,
+  category: expense.category,
+  note: expense.note,
+  createdAt: expense.created_at
+})
 
 interface ExpenseTableProps {
   expenses: Expense[]

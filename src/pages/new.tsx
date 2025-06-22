@@ -6,9 +6,11 @@ import { Save } from "lucide-react"
 import { useState } from "react"
 import { useRouter } from "next/router"
 import { getCategoryNames } from "@/lib/category-colors"
+import { useExpenses } from "@/hooks/use-expenses"
 
 export default function NewExpensePage() {
   const router = useRouter()
+  const { createExpense } = useExpenses()
   const [formData, setFormData] = useState({
     title: "",
     amount: "",
@@ -106,7 +108,6 @@ export default function NewExpensePage() {
 
     let value = formData[field as keyof typeof formData]
     
-    // Format amount to 2 decimal places on blur
     if (field === "amount" && value) {
       const formattedValue = formatAmount(value)
       setFormData(prev => ({
@@ -156,15 +157,22 @@ export default function NewExpensePage() {
     setIsSubmitting(true)
     
     try {
-      // TODO: Implement expense saving logic
-      console.log("Expense data:", formData)
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      // For now, just redirect back to home
-      router.push("/")
+      const expenseData = {
+        title: formData.title.trim(),
+        amount: parseFloat(formData.amount),
+        date: formData.date,
+        category: formData.category,
+        note: formData.note.trim() || undefined
+      }
+
+      await createExpense(expenseData)
+      router.push("/history")
     } catch (error) {
       console.error("Error saving expense:", error)
-      // TODO: Show error message to user
+      setErrors(prev => ({
+        ...prev,
+        submit: "Failed to save expense. Please try again."
+      }))
     } finally {
       setIsSubmitting(false)
     }
@@ -269,6 +277,13 @@ export default function NewExpensePage() {
               rows={3}
             />
           </div>
+
+          {/* Submit Error */}
+          {errors.submit && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-sm text-red-600">{errors.submit}</p>
+            </div>
+          )}
 
           {/* Submit Button */}
           <div className="flex gap-3 pt-4">

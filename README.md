@@ -1,28 +1,143 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
+# Expense Log
+
+A modern expense tracking application built with Next.js, TypeScript, and Supabase. Track your expenses, analyze spending patterns, and master your budget with a clean, intuitive interface.
+
+## Features
+
+- ✨ **Add Expenses**: Easily record new expenses with categories and notes
+- 📊 **View History**: Browse, search, and filter your expense history
+- 📈 **Real-time Stats**: See total expenses, transaction count, and monthly averages
+- 🎨 **Modern UI**: Beautiful, responsive design with dark mode support
+- 🔍 **Advanced Filtering**: Filter by date range, category, and search terms
+- 📱 **Mobile Friendly**: Optimized for all device sizes
+
+## Tech Stack
+
+- **Frontend**: Next.js 15, React 19, TypeScript
+- **Styling**: Tailwind CSS, Radix UI components
+- **Database**: Supabase (PostgreSQL)
+- **Icons**: Lucide React
+- **State Management**: React hooks with custom useExpenses hook
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 18+ 
+- npm, yarn, or pnpm
+- Supabase account
+
+### Installation
+
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <repository-url>
+cd expense-log
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+3. Set up Supabase:
+   - Follow the [Supabase Setup Guide](./SUPABASE_SETUP.md) to create your database
+   - Create a `.env.local` file with your Supabase credentials
 
-[API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+4. Run the development server:
+```bash
+npm run dev
+```
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) instead of React pages.
+5. Open [http://localhost:3000](http://localhost:3000) to view the application
 
-This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Environment Variables
+
+Create a `.env.local` file in the project root:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+## Database Schema
+
+The application uses a single `expenses` table with the following structure:
+
+```sql
+CREATE TABLE expenses (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  title TEXT NOT NULL,
+  amount DECIMAL(10,2) NOT NULL CHECK (amount >= 0),
+  date DATE NOT NULL,
+  category TEXT NOT NULL,
+  note TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
+## Project Structure
+
+```
+src/
+├── components/          # React components
+│   ├── ui/             # Reusable UI components
+│   ├── expense-table.tsx
+│   ├── layout.tsx
+│   └── app-sidebar.tsx
+├── hooks/              # Custom React hooks
+│   └── use-expenses.ts
+├── lib/                # Utilities and configurations
+│   ├── supabase.ts     # Supabase client
+│   ├── expense-api.ts  # API utilities
+│   ├── config.ts       # App configuration
+│   └── category-colors.ts
+├── pages/              # Next.js pages
+│   ├── index.tsx       # Home page
+│   ├── new.tsx         # Add expense page
+│   ├── history.tsx     # Expense history page
+│   └── categories.tsx  # Categories page
+└── styles/             # Global styles
+    └── globals.css
+```
+
+## Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## License
+
+This project is open source and available under the [MIT License](LICENSE).
+
+## Support
+
+If you encounter any issues or have questions:
+
+1. Check the [Supabase Setup Guide](./SUPABASE_SETUP.md)
+2. Review the troubleshooting section in the setup guide
+3. Open an issue on GitHub
+
+## Roadmap
+
+- [ ] User authentication and multi-user support
+- [ ] Data export functionality (CSV, PDF)
+- [ ] Budget tracking and alerts
+- [ ] Recurring expenses
+- [ ] Expense categories management
+- [ ] Real-time collaboration
+- [ ] Mobile app (React Native)
 
 ## Learn More
 
