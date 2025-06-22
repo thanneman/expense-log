@@ -31,7 +31,6 @@ export interface Category {
   id: string
   name: string
   color: string
-  icon?: string
   created_at: string
   updated_at: string
 }
@@ -57,11 +56,9 @@ export interface UpdateExpenseData {
 export interface CreateCategoryData {
   name: string
   color: string
-  icon?: string
 }
 
 export interface UpdateCategoryData {
   name?: string
   color?: string
-  icon?: string
 } 

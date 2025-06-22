@@ -3,7 +3,6 @@ CREATE TABLE IF NOT EXISTS categories (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT NOT NULL UNIQUE,
   color TEXT NOT NULL DEFAULT '#3B82F6',
-  icon TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -34,22 +33,22 @@ CREATE POLICY "Allow all operations on categories" ON categories
   FOR ALL USING (true);
 
 -- Insert default categories
-INSERT INTO categories (name, color, icon) VALUES
-  ('Food & Dining', '#EF4444', 'utensils'),
-  ('Transportation', '#3B82F6', 'car'),
-  ('Entertainment', '#8B5CF6', 'film'),
-  ('Shopping', '#10B981', 'shopping-bag'),
-  ('Healthcare', '#F59E0B', 'heart'),
-  ('Utilities', '#06B6D4', 'zap'),
-  ('Housing', '#84CC16', 'home'),
-  ('Education', '#EC4899', 'book'),
-  ('Travel', '#F97316', 'plane'),
-  ('Personal Care', '#6366F1', 'user'),
-  ('Insurance', '#14B8A6', 'shield'),
-  ('Investments', '#22C55E', 'trending-up'),
-  ('Gifts', '#A855F7', 'gift'),
-  ('Subscriptions', '#F43F5E', 'repeat'),
-  ('Other', '#6B7280', 'more-horizontal')
+INSERT INTO categories (name, color) VALUES
+  ('Food & Dining', '#EF4444'),
+  ('Transportation', '#3B82F6'),
+  ('Entertainment', '#8B5CF6'),
+  ('Shopping', '#10B981'),
+  ('Healthcare', '#F59E0B'),
+  ('Utilities', '#06B6D4'),
+  ('Housing', '#84CC16'),
+  ('Education', '#EC4899'),
+  ('Travel', '#F97316'),
+  ('Personal Care', '#6366F1'),
+  ('Insurance', '#14B8A6'),
+  ('Investments', '#22C55E'),
+  ('Gifts', '#A855F7'),
+  ('Subscriptions', '#F43F5E'),
+  ('Other', '#6B7280')
 ON CONFLICT (name) DO NOTHING;
 
 -- Add foreign key constraint to expenses table to reference categories

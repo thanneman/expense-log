@@ -2,107 +2,44 @@ import { Layout } from "@/components/layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Plus } from "lucide-react"
+import { Plus, Edit, Trash2, X, Check } from "lucide-react"
 import { useState } from "react"
-import { useRouter } from "next/router"
-import { CategoryBadge } from "@/components/ui/category-badge"
-import { getCategoryNames } from "@/lib/category-colors"
+import { useCategories } from "@/hooks/use-categories"
+import type { Category } from "@/lib/supabase"
+
+interface CategoryFormData {
+  name: string
+  color: string
+}
+
+const defaultColors = [
+  '#EF4444', '#F97316', '#F59E0B', '#84CC16', '#22C55E',
+  '#10B981', '#14B8A6', '#06B6D4', '#3B82F6', '#6366F1',
+  '#8B5CF6', '#A855F7', '#EC4899', '#F43F5E', '#6B7280'
+]
 
 export default function CategoriesPage() {
-  const router = useRouter()
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    color: "#DBEAFE" // Default muted blue color
-  })
-
+  const { categories, loading, error, createCategory, updateCategory, deleteCategory, getCategoryUsageCount } = useCategories()
+  const [isAdding, setIsAdding] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [formData, setFormData] = useState<CategoryFormData>({ name: '', color: '#3B82F6' })
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [touched, setTouched] = useState<Record<string, boolean>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const validateField = (field: string, value: string): string => {
-    switch (field) {
-      case "name":
-        if (!value.trim()) return "Category name is required"
-        if (value.trim().length < 2) return "Category name must be at least 2 characters"
-        if (value.trim().length > 50) return "Category name must be less than 50 characters"
-        // Check if category already exists (case insensitive)
-        const existingCategories = getCategoryNames()
-        if (existingCategories.some(cat => cat.toLowerCase() === value.trim().toLowerCase())) {
-          return "Category already exists"
-        }
-        return ""
-      
-      case "description":
-        if (value.trim().length > 200) return "Description must be less than 200 characters"
-        return ""
-      
-      case "color":
-        if (!value) return "Color is required"
-        // Basic hex color validation
-        if (!/^#[0-9A-F]{6}$/i.test(value)) return "Please enter a valid hex color"
-        return ""
-      
-      default:
-        return ""
-    }
-  }
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }))
-
-    if (touched[field]) {
-      const error = validateField(field, value)
-      setErrors(prev => ({
-        ...prev,
-        [field]: error
-      }))
-    }
-  }
-
-  const handleBlur = (field: string) => {
-    setTouched(prev => ({
-      ...prev,
-      [field]: true
-    }))
-
-    const value = formData[field as keyof typeof formData]
-    const error = validateField(field, value)
-    setErrors(prev => ({
-      ...prev,
-      [field]: error
-    }))
-  }
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {}
     
-    setTouched({
-      name: true,
-      description: true,
-      color: true
-    })
+    if (!formData.name.trim()) {
+      newErrors.name = 'Category name is required'
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = 'Category name must be at least 2 characters'
+    } else if (formData.name.trim().length > 50) {
+      newErrors.name = 'Category name must be less than 50 characters'
+    }
 
-    // Validate all required fields
-    const requiredFields = ['name', 'color']
-    requiredFields.forEach(field => {
-      const error = validateField(field, formData[field as keyof typeof formData])
-      if (error) {
-        newErrors[field] = error
-      }
-    })
-
-    // Validate optional fields
-    const optionalFields = ['description']
-    optionalFields.forEach(field => {
-      const error = validateField(field, formData[field as keyof typeof formData])
-      if (error) {
-        newErrors[field] = error
-      }
-    })
+    if (!formData.color) {
+      newErrors.color = 'Color is required'
+    }
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -118,182 +55,259 @@ export default function CategoriesPage() {
     setIsSubmitting(true)
     
     try {
-      // TODO: Implement category saving logic
-      console.log("Category data:", formData)
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      // For now, just redirect back to home
-      router.push("/")
+      if (editingId) {
+        await updateCategory(editingId, {
+          name: formData.name.trim(),
+          color: formData.color
+        })
+        setEditingId(null)
+      } else {
+        await createCategory({
+          name: formData.name.trim(),
+          color: formData.color
+        })
+        setIsAdding(false)
+      }
+      
+      setFormData({ name: '', color: '#3B82F6' })
+      setErrors({})
     } catch (error) {
-      console.error("Error saving category:", error)
-      // TODO: Show error message to user
+      console.error('Error saving category:', error)
+      setErrors(prev => ({
+        ...prev,
+        submit: error instanceof Error ? error.message : 'Failed to save category'
+      }))
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  const presetColors = [
-    "#FEF3C7", // Amber-100 (Food & Dining)
-    "#DBEAFE", // Blue-100 (Transportation)
-    "#F3E8FF", // Purple-100 (Shopping)
-    "#FCE7F3", // Pink-100 (Entertainment)
-    "#D1FAE5", // Green-100 (Healthcare)
-    "#F1F5F9", // Slate-100 (Utilities)
-    "#FFEDD5", // Orange-100 (Housing)
-    "#E0E7FF", // Indigo-100 (Education)
-    "#CFFAFE", // Cyan-100 (Travel)
-    "#F3F4F6", // Gray-100 (Other)
-  ]
+  const handleEdit = (category: Category) => {
+    setEditingId(category.id)
+    setFormData({ name: category.name, color: category.color })
+    setErrors({})
+    // Scroll to form after state update
+    setTimeout(() => {
+      const formElement = document.querySelector('.bg-card.border.rounded-lg.p-6')
+      if (formElement) {
+        formElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    }, 100)
+  }
 
-  const existingCategories = getCategoryNames()
+  const handleCancel = () => {
+    setEditingId(null)
+    setIsAdding(false)
+    setFormData({ name: '', color: '#3B82F6' })
+    setErrors({})
+  }
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Are you sure you want to delete the category "${name}"?`)) {
+      return
+    }
+
+    try {
+      const usageCount = await getCategoryUsageCount(id)
+      if (usageCount > 0) {
+        alert(`Cannot delete "${name}" because it is being used by ${usageCount} expense(s).`)
+        return
+      }
+
+      await deleteCategory(id)
+    } catch (error) {
+      console.error('Error deleting category:', error)
+      alert(error instanceof Error ? error.message : 'Failed to delete category')
+    }
+  }
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Categories</h1>
+            <p className="text-muted-foreground">
+              Manage your expense categories
+            </p>
+          </div>
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <p className="text-muted-foreground mt-2">Loading categories...</p>
+          </div>
+        </div>
+      </Layout>
+    )
+  }
+
+  if (error) {
+    return (
+      <Layout>
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Categories</h1>
+            <p className="text-muted-foreground">
+              Manage your expense categories
+            </p>
+          </div>
+          <div className="text-center py-8">
+            <p className="text-red-500">Error: {error}</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="mt-2 text-primary hover:underline"
+            >
+              Try again
+            </button>
+          </div>
+        </div>
+      </Layout>
+    )
+  }
 
   return (
     <Layout>
-      {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Categories</h1>
-          <p className="text-muted-foreground">
-            Manage your expense categories
-          </p>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Categories</h1>
+            <p className="text-muted-foreground">
+              Manage your expense categories
+            </p>
+          </div>
+          {!isAdding && !editingId && (
+            <Button onClick={() => setIsAdding(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Category
+            </Button>
+          )}
         </div>
-      </div>
 
-      {/* Existing Categories */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Existing Categories</h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {existingCategories.map((category) => (
-            <div
-              key={category}
-              className="flex items-center justify-between p-3 border rounded-lg bg-card"
-            >
-              <CategoryBadge category={category} />
-              <div className="flex gap-2">
-                <Button variant="ghost" size="sm">
-                  Edit
+        {/* Add/Edit Form */}
+        {(isAdding || editingId) && (
+          <div className="bg-card border rounded-lg p-6">
+            <h2 className="text-lg font-semibold mb-4">
+              {editingId ? 'Edit Category' : 'Add New Category'}
+            </h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Category Name</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    placeholder="Enter category name"
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    className={errors.name ? "border-red-500" : ""}
+                  />
+                  {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="color">Color</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="color"
+                      type="color"
+                      value={formData.color}
+                      onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
+                      className="w-16 h-10 p-1"
+                    />
+                    <div className="flex-1 grid grid-cols-5 gap-1">
+                      {defaultColors.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          className="w-8 h-8 rounded border-2 border-transparent hover:border-gray-300 transition-colors"
+                          style={{ backgroundColor: color }}
+                          onClick={() => setFormData(prev => ({ ...prev, color }))}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  {errors.color && <p className="text-sm text-red-500">{errors.color}</p>}
+                </div>
+              </div>
+
+              {errors.submit && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-sm text-red-600">{errors.submit}</p>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="h-4 w-4 mr-2" />
+                      {editingId ? 'Update' : 'Create'} Category
+                    </>
+                  )}
                 </Button>
-                <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
-                  Delete
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCancel}
+                  disabled={isSubmitting}
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Categories List */}
+        <div className="grid gap-2">
+          {categories.map((category) => (
+            <div
+              key={category.id}
+              className="bg-card border rounded-lg p-2 flex items-center justify-between"
+            >
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-4 h-4 rounded-full border-2 border-gray-200"
+                  style={{ backgroundColor: category.color }}
+                />
+                <span className="font-medium text-sm">{category.name}</span>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleEdit(category)}
+                  disabled={!!editingId}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDelete(category.id, category.name)}
+                  disabled={!!editingId}
+                >
+                  <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
             </div>
           ))}
         </div>
-      </div>
 
-      {/* Add New Category Form */}
-      <div className="border-t pt-8">
-        <h2 className="text-xl font-semibold mb-6">Add New Category</h2>
-        <div className="max-w-2xl">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Category Name */}
-            <div className="space-y-2">
-              <Label htmlFor="name">Category Name</Label>
-              <Input
-                id="name"
-                type="text"
-                placeholder="Enter category name"
-                value={formData.name}
-                onChange={(e) => handleInputChange("name", e.target.value)}
-                onBlur={() => handleBlur("name")}
-                className={errors.name ? "border-red-500 focus-visible:border-red-500" : ""}
-                required
-              />
-              {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name}</p>}
-            </div>
-
-            {/* Color Picker */}
-            <div className="space-y-2">
-              <Label htmlFor="color">Color</Label>
-              <div className="flex items-center gap-3">
-                <Input
-                  id="color"
-                  type="color"
-                  value={formData.color}
-                  onChange={(e) => handleInputChange("color", e.target.value)}
-                  onBlur={() => handleBlur("color")}
-                  className={`w-16 h-10 p-1 border rounded-md cursor-pointer ${
-                    errors.color ? "border-red-500" : "border-input"
-                  }`}
-                  required
-                />
-                <Input
-                  type="text"
-                  placeholder="#3B82F6"
-                  value={formData.color}
-                  onChange={(e) => handleInputChange("color", e.target.value)}
-                  onBlur={() => handleBlur("color")}
-                  className={`flex-1 ${errors.color ? "border-red-500 focus-visible:border-red-500" : ""}`}
-                  required
-                />
-              </div>
-              {errors.color && <p className="text-sm text-red-500 mt-1">{errors.color}</p>}
-              
-              {/* Preset Colors */}
-              <div className="flex flex-wrap gap-2 mt-2">
-                {presetColors.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    className="w-8 h-8 rounded-full border-2 border-input hover:border-ring transition-colors"
-                    style={{ backgroundColor: color }}
-                    onClick={() => handleInputChange("color", color)}
-                    title={color}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Description */}
-            <div className="space-y-2">
-              <Label htmlFor="description">Description (Optional)</Label>
-              <textarea
-                id="description"
-                placeholder="Add a description for this category..."
-                value={formData.description}
-                onChange={(e) => handleInputChange("description", e.target.value)}
-                onBlur={() => handleBlur("description")}
-                className={`flex min-h-[80px] w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] ${
-                  errors.description ? "border-red-500 focus-visible:border-red-500" : ""
-                }`}
-                rows={3}
-              />
-              {errors.description && <p className="text-sm text-red-500 mt-1">{errors.description}</p>}
-            </div>
-
-            {/* Submit Button */}
-            <div className="flex gap-3 pt-4">
-              <Button
-                type="submit"
-                size="lg"
-                className="flex-1"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Category
-                  </>
-                )}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="lg"
-                onClick={() => router.back()}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-            </div>
-          </form>
-        </div>
+        {categories.length === 0 && !isAdding && (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">No categories found. Create your first category to get started.</p>
+          </div>
+        )}
       </div>
     </Layout>
   )
