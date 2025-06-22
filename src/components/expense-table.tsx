@@ -18,7 +18,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { CategoryBadge } from "@/components/ui/category-badge"
 import { getCategoryColor } from "@/lib/category-colors"
-import { ChevronDown, ChevronUp, MoreHorizontal, Search, Filter, Calendar, BarChart3 } from "lucide-react"
+import { formatCurrency, formatDate } from "@/lib/utils"
+import { ChevronDown, ChevronUp, MoreHorizontal, Search, Filter, Calendar, BarChart3, RotateCcw } from "lucide-react"
 import type { Expense as SupabaseExpense } from "@/lib/supabase"
 
 // Expense type definition - using Supabase type with mapping
@@ -47,13 +48,20 @@ interface ExpenseTableProps {
   expenses: Expense[]
   onEdit?: (expense: Expense) => void
   onDelete?: (expenseId: string) => void
+  editingId?: string | null
+  EditForm?: React.ComponentType<{
+    expense: Expense
+    onSave: (id: string, data: { title: string; amount: number; date: string; category: string; note?: string }) => Promise<void>
+    onCancel: () => void
+    isSubmitting: boolean
+  }>
 }
 
 type SortField = 'title' | 'amount' | 'date' | 'category'
 type SortDirection = 'asc' | 'desc'
 type GroupBy = 'none' | 'month' | 'category'
 
-export function ExpenseTable({ expenses, onEdit, onDelete }: ExpenseTableProps) {
+export function ExpenseTable({ expenses, onEdit, onDelete, editingId, EditForm }: ExpenseTableProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState<string>("")
   const [dateRange, setDateRange] = useState({ start: "", end: "" })
@@ -61,7 +69,13 @@ export function ExpenseTable({ expenses, onEdit, onDelete }: ExpenseTableProps) 
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
   const [currentPage, setCurrentPage] = useState(1)
   const [groupBy, setGroupBy] = useState<GroupBy>('none')
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const itemsPerPage = 10
+
+  // Memoize the EditForm component to prevent unnecessary re-renders
+  const MemoizedEditForm = useMemo(() => {
+    return EditForm
+  }, [EditForm])
 
   // Get unique categories for filter
   const categories = useMemo(() => {
@@ -179,21 +193,6 @@ export function ExpenseTable({ expenses, onEdit, onDelete }: ExpenseTableProps) 
     setCurrentPage(1)
   }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount)
-  }
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
-  }
-
   const SortableHeader = ({ field, children }: { field: SortField; children: React.ReactNode }) => (
     <TableHead 
       className="cursor-pointer hover:bg-muted/50 transition-colors"
@@ -214,43 +213,100 @@ export function ExpenseTable({ expenses, onEdit, onDelete }: ExpenseTableProps) 
     </TableHead>
   )
 
-  const renderExpenseRow = (expense: Expense) => (
-    <TableRow key={expense.id}>
-      <TableCell className="font-medium">{expense.title}</TableCell>
-      <TableCell className="font-mono">{formatCurrency(expense.amount)}</TableCell>
-      <TableCell>{formatDate(expense.date)}</TableCell>
-      <TableCell>
-        <CategoryBadge category={expense.category} />
-      </TableCell>
-      <TableCell className="max-w-[200px] truncate">
-        {expense.note || "-"}
-      </TableCell>
-      <TableCell>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {onEdit && (
-              <DropdownMenuItem onClick={() => onEdit(expense)}>
-                Edit
-              </DropdownMenuItem>
-            )}
-            {onDelete && (
-              <DropdownMenuItem 
-                onClick={() => onDelete(expense.id)}
-                className="text-red-600 focus:text-red-600"
-              >
-                Delete
-              </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </TableCell>
-    </TableRow>
-  )
+  const handleSaveEdit = async (id: string, data: { title: string; amount: number; date: string; category: string; note?: string }) => {
+    setIsSubmitting(true)
+    try {
+      // This will be handled by the parent component
+      if (onEdit) {
+        // We need to find a way to call the parent's save function
+        // For now, we'll use a custom event
+        const event = new CustomEvent('expense-save', { detail: { id, data } })
+        window.dispatchEvent(event)
+      }
+    } catch (error) {
+      console.error("Error updating expense:", error)
+      throw error
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleCancelEdit = () => {
+    // This will be handled by the parent component
+    if (onEdit) {
+      const event = new CustomEvent('expense-cancel')
+      window.dispatchEvent(event)
+    }
+  }
+
+  const renderExpenseRow = (expense: Expense) => {
+    const isEditing = editingId === expense.id
+
+    if (isEditing && MemoizedEditForm) {
+      return (
+        <TableRow key={expense.id} id={`expense-${expense.id}`}>
+          <TableCell colSpan={6} className="p-0">
+            <MemoizedEditForm
+              expense={expense}
+              onSave={handleSaveEdit}
+              onCancel={handleCancelEdit}
+              isSubmitting={isSubmitting}
+            />
+          </TableCell>
+        </TableRow>
+      )
+    }
+
+    return (
+      <TableRow key={expense.id} id={`expense-${expense.id}`}>
+        <TableCell className="font-medium">{expense.title}</TableCell>
+        <TableCell className="font-mono">{formatCurrency(expense.amount)}</TableCell>
+        <TableCell>{formatDate(expense.date)}</TableCell>
+        <TableCell>
+          <CategoryBadge category={expense.category} />
+        </TableCell>
+        <TableCell className="max-w-[200px] truncate">
+          {expense.note || "-"}
+        </TableCell>
+        <TableCell>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {onEdit && (
+                <DropdownMenuItem onClick={() => onEdit(expense)}>
+                  Edit
+                </DropdownMenuItem>
+              )}
+              {onDelete && (
+                <DropdownMenuItem 
+                  onClick={() => onDelete(expense.id)}
+                  className="text-red-600 focus:text-red-600"
+                >
+                  Delete
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </TableCell>
+      </TableRow>
+    )
+  }
+
+  const clearAllFilters = () => {
+    setSearchTerm("")
+    setCategoryFilter("")
+    setDateRange({ start: "", end: "" })
+    setSortField('date')
+    setSortDirection('desc')
+    setGroupBy('none')
+    setCurrentPage(1)
+  }
+
+  const hasActiveFilters = searchTerm || categoryFilter || dateRange.start || dateRange.end || groupBy !== 'none'
 
   return (
     <div className="space-y-4">
@@ -304,8 +360,8 @@ export function ExpenseTable({ expenses, onEdit, onDelete }: ExpenseTableProps) 
           </DropdownMenu>
         </div>
 
-        {/* Date Range Filter */}
-        <div className="flex flex-col sm:flex-row gap-4">
+        {/* Date Range Filter and Group By */}
+        <div className="flex flex-col lg:flex-row gap-4">
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm font-medium">Date Range:</span>
@@ -345,10 +401,7 @@ export function ExpenseTable({ expenses, onEdit, onDelete }: ExpenseTableProps) 
               </Button>
             )}
           </div>
-        </div>
-
-        {/* Group By and Results Summary */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          
           <div className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm font-medium">Group by:</span>
@@ -373,16 +426,29 @@ export function ExpenseTable({ expenses, onEdit, onDelete }: ExpenseTableProps) 
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          
-          <div className="text-sm text-muted-foreground">
+        </div>
+
+        {/* Results Summary and Clear All */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="text-sm text-muted-foreground flex-1">
             <span className="font-medium">Total: {formatCurrency(totalAmount)}</span>
             {groupBy === 'none' && (
               <span> • Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredAndSortedExpenses.length)} of {filteredAndSortedExpenses.length} expenses</span>
             )}
             {categoryFilter && ` • Filtered by ${categoryFilter}`}
-            {(dateRange.start || dateRange.end) && (
-              <span> • Date filtered</span>
-            )}
+          </div>
+          
+          <div className="flex-shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={clearAllFilters}
+              disabled={!hasActiveFilters}
+              className={!hasActiveFilters ? "opacity-50" : ""}
+            >
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Clear All
+            </Button>
           </div>
         </div>
       </div>

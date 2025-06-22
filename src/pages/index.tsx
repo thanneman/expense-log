@@ -2,17 +2,11 @@ import { Layout } from "@/components/layout"
 import { Button } from "@/components/ui/button"
 import { Plus, BarChart3 } from "lucide-react"
 import Link from "next/link"
+import { formatCurrency } from "@/lib/utils"
 import { useExpenses } from "@/hooks/use-expenses"
 
 export default function Page() {
   const { stats, loading } = useExpenses()
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount)
-  }
 
   return (
     <Layout>

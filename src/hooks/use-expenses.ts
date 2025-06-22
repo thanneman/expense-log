@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { ExpenseAPI } from '@/lib/expense-api'
 import type { CreateExpenseData, UpdateExpenseData } from '@/lib/supabase'
 import { mapSupabaseExpense } from '@/components/expense-table'
@@ -18,11 +18,34 @@ export function useExpenses() {
   const [expenses, setExpenses] = useState<ComponentExpense[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [stats, setStats] = useState({
-    totalAmount: 0,
-    transactionCount: 0,
-    monthlyAverage: 0
-  })
+
+  // Calculate stats during render instead of storing in state
+  const stats = useMemo(() => {
+    const totalAmount = expenses.reduce((sum, expense) => sum + expense.amount, 0)
+    const transactionCount = expenses.length
+    
+    // Calculate monthly average
+    const monthlyAverage = (() => {
+      if (expenses.length === 0) return 0
+      
+      const now = new Date()
+      const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, 1)
+      const recentExpenses = expenses.filter(expense => 
+        new Date(expense.date) >= sixMonthsAgo
+      )
+      
+      if (recentExpenses.length === 0) return 0
+      
+      const totalRecent = recentExpenses.reduce((sum, expense) => sum + expense.amount, 0)
+      return totalRecent / 6 // Average over 6 months
+    })()
+    
+    return {
+      totalAmount,
+      transactionCount,
+      monthlyAverage
+    }
+  }, [expenses])
 
   // Fetch all expenses
   const fetchExpenses = useCallback(async () => {
@@ -32,15 +55,6 @@ export function useExpenses() {
       const data = await ExpenseAPI.getAllExpenses()
       const mappedExpenses = data.map(mapSupabaseExpense)
       setExpenses(mappedExpenses)
-      
-      // Update stats
-      const totalAmount = await ExpenseAPI.getTotalAmount()
-      const monthlyAverage = await ExpenseAPI.getMonthlyAverage()
-      setStats({
-        totalAmount,
-        transactionCount: data.length,
-        monthlyAverage
-      })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch expenses')
     } finally {

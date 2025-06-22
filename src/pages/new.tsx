@@ -5,12 +5,14 @@ import { Label } from "@/components/ui/label"
 import { Save } from "lucide-react"
 import { useState } from "react"
 import { useRouter } from "next/router"
-import { getCategoryNames } from "@/lib/category-colors"
+import { formatAmount } from "@/lib/utils"
 import { useExpenses } from "@/hooks/use-expenses"
+import { useCategories } from "@/hooks/use-categories"
 
 export default function NewExpensePage() {
   const router = useRouter()
   const { createExpense } = useExpenses()
+  const { categories, loading: categoriesLoading } = useCategories()
   const [formData, setFormData] = useState({
     title: "",
     amount: "",
@@ -23,42 +25,13 @@ export default function NewExpensePage() {
   const [touched, setTouched] = useState<Record<string, boolean>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const formatAmount = (value: string): string => {
-    // Remove all non-numeric characters except decimal point
-    const cleanValue = value.replace(/[^\d.]/g, '')
-    
-    // Prevent multiple decimal points
-    const parts = cleanValue.split('.')
-    if (parts.length > 2) {
-      return parts[0] + '.' + parts.slice(1).join('')
-    }
-    
-    // Limit to 2 decimal places
-    if (parts.length === 2 && parts[1].length > 2) {
-      return parts[0] + '.' + parts[1].substring(0, 2)
-    }
-    
-    // Always format to 2 decimal places
-    if (parts.length === 1) {
-      // No decimal point, add .00
-      return cleanValue + '.00'
-    } else if (parts.length === 2) {
-      // Has decimal point, pad to 2 decimal places
-      const wholePart = parts[0] || '0'
-      const decimalPart = parts[1].padEnd(2, '0').substring(0, 2)
-      return wholePart + '.' + decimalPart
-    }
-    
-    return cleanValue
-  }
-
-  const validateField = (field: string, value: string): string => {
+  const validateField = (field: string, value: string): string | null => {
     switch (field) {
       case "title":
         if (!value.trim()) return "Title is required"
         if (value.trim().length < 2) return "Title must be at least 2 characters"
         if (value.trim().length > 100) return "Title must be less than 100 characters"
-        return ""
+        return null
       
       case "amount":
         if (!value.trim()) return "Amount is required"
@@ -66,7 +39,7 @@ export default function NewExpensePage() {
         if (isNaN(parseFloat(value))) return "Please enter a valid number"
         if (value.includes('.') && value.split('.')[1]?.length > 2) return "Amount can have maximum 2 decimal places"
         if (parseFloat(value) > 999999.99) return "Amount cannot exceed $999,999.99"
-        return ""
+        return null
       
       case "date":
         if (!value) return "Date is required"
@@ -74,14 +47,14 @@ export default function NewExpensePage() {
         
         if (value > todayAZ) return "Date cannot be in the future"
         if (value < '1900-01-01') return "Date cannot be before 1900"
-        return ""
+        return null
       
       case "category":
         if (!value) return "Category is required"
-        return ""
+        return null
       
       default:
-        return ""
+        return null
     }
   }
 
@@ -95,7 +68,7 @@ export default function NewExpensePage() {
       const error = validateField(field, value)
       setErrors(prev => ({
         ...prev,
-        [field]: error
+        [field]: error || ""
       }))
     }
   }
@@ -120,7 +93,7 @@ export default function NewExpensePage() {
     const error = validateField(field, value)
     setErrors(prev => ({
       ...prev,
-      [field]: error
+      [field]: error || ""
     }))
   }
 
@@ -178,7 +151,25 @@ export default function NewExpensePage() {
     }
   }
 
-  const categories = getCategoryNames()
+  // Show loading state while categories are being fetched
+  if (categoriesLoading) {
+    return (
+      <Layout>
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Add New Expense</h1>
+            <p className="text-muted-foreground">
+              Record a new expense to track your spending
+            </p>
+          </div>
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <p className="text-muted-foreground mt-2">Loading categories...</p>
+          </div>
+        </div>
+      </Layout>
+    )
+  }
 
   return (
     <Layout>
@@ -257,8 +248,8 @@ export default function NewExpensePage() {
             >
               <option value="">Select a category</option>
               {categories.map((category) => (
-                <option key={category} value={category} className="flex items-center gap-2">
-                  {category}
+                <option key={category.id} value={category.name} className="flex items-center gap-2">
+                  {category.name}
                 </option>
               ))}
             </select>
@@ -286,12 +277,11 @@ export default function NewExpensePage() {
           )}
 
           {/* Submit Button */}
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-3">
             <Button
               type="submit"
-              size="lg"
-              className="flex-1"
               disabled={isSubmitting}
+              className="flex-1"
             >
               {isSubmitting ? (
                 <>
@@ -308,8 +298,7 @@ export default function NewExpensePage() {
             <Button
               type="button"
               variant="outline"
-              size="lg"
-              onClick={() => router.back()}
+              onClick={() => router.push("/history")}
               disabled={isSubmitting}
             >
               Cancel
