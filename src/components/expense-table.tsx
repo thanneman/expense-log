@@ -259,7 +259,7 @@ export function ExpenseTable({ expenses, onEdit, onDelete, editingId, EditForm }
 
     return (
       <TableRow key={expense.id} id={`expense-${expense.id}`}>
-        <TableCell className="font-medium max-w-[120px] md:max-w-none truncate text-xs md:text-base">
+        <TableCell className="font-medium max-w-[120px] md:max-w-none truncate text-xs md:text-sm">
           {expense.title}
         </TableCell>
         <TableCell className="font-mono text-xs md:text-sm">
