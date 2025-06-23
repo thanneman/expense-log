@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label"
 import { Save, X } from "lucide-react"
 import { formatAmount } from "@/lib/utils"
 import { useCategories } from "@/hooks/use-categories"
+import { useIsMobile } from "@/hooks/use-mobile"
 import type { Expense } from "@/components/expense-table"
 
 interface EditExpenseFormProps {
@@ -16,6 +17,7 @@ interface EditExpenseFormProps {
 
 export function EditExpenseForm({ expense, onSave, onCancel, isSubmitting }: EditExpenseFormProps) {
   const { categories, loading: categoriesLoading } = useCategories()
+  const isMobile = useIsMobile()
   const [formData, setFormData] = useState({
     title: expense.title,
     amount: expense.amount.toString(),
@@ -148,11 +150,10 @@ export function EditExpenseForm({ expense, onSave, onCancel, isSubmitting }: Edi
     )
   }
 
-  return (
+  const formContent = (
     <div className="bg-muted/20 border p-4 space-y-4">
-      <h3 className="font-semibold">Edit Expense</h3>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           {/* Title */}
           <div className="space-y-2">
             <Label htmlFor={`title-${expense.id}`}>Title</Label>
@@ -183,40 +184,43 @@ export function EditExpenseForm({ expense, onSave, onCancel, isSubmitting }: Edi
             {errors.amount && <p className="text-sm text-red-500">{errors.amount}</p>}
           </div>
 
-          {/* Date */}
-          <div className="space-y-2">
-            <Label htmlFor={`date-${expense.id}`}>Date</Label>
-            <Input
-              id={`date-${expense.id}`}
-              type="date"
-              value={formData.date}
-              onChange={(e) => handleInputChange("date", e.target.value)}
-              onBlur={() => handleBlur("date")}
-              className={errors.date ? "border-red-500" : ""}
-            />
-            {errors.date && <p className="text-sm text-red-500">{errors.date}</p>}
-          </div>
+          {/* Date and Category in a row on larger screens */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Date */}
+            <div className="space-y-2">
+              <Label htmlFor={`date-${expense.id}`}>Date</Label>
+              <Input
+                id={`date-${expense.id}`}
+                type="date"
+                value={formData.date}
+                onChange={(e) => handleInputChange("date", e.target.value)}
+                onBlur={() => handleBlur("date")}
+                className={errors.date ? "border-red-500" : ""}
+              />
+              {errors.date && <p className="text-sm text-red-500">{errors.date}</p>}
+            </div>
 
-          {/* Category */}
-          <div className="space-y-2">
-            <Label htmlFor={`category-${expense.id}`}>Category</Label>
-            <select
-              id={`category-${expense.id}`}
-              className={`flex h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:ring-ring/50 focus-visible:ring-[3px] ${
-                errors.category ? "border-red-500" : "focus-visible:border-ring"
-              }`}
-              value={formData.category}
-              onChange={(e) => handleInputChange("category", e.target.value)}
-              onBlur={() => handleBlur("category")}
-            >
-              <option value="">Select a category</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.name}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-            {errors.category && <p className="text-sm text-red-500">{errors.category}</p>}
+            {/* Category */}
+            <div className="space-y-2">
+              <Label htmlFor={`category-${expense.id}`}>Category</Label>
+              <select
+                id={`category-${expense.id}`}
+                className={`flex h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:ring-ring/50 focus-visible:ring-[3px] ${
+                  errors.category ? "border-red-500" : "focus-visible:border-ring"
+                }`}
+                value={formData.category}
+                onChange={(e) => handleInputChange("category", e.target.value)}
+                onBlur={() => handleBlur("category")}
+              >
+                <option value="">Select a category</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.name}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+              {errors.category && <p className="text-sm text-red-500">{errors.category}</p>}
+            </div>
           </div>
         </div>
 
@@ -240,11 +244,11 @@ export function EditExpenseForm({ expense, onSave, onCancel, isSubmitting }: Edi
         )}
 
         {/* Action Buttons */}
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <Button
             type="submit"
-            size="sm"
             disabled={isSubmitting}
+            className="flex-1 sm:flex-none"
           >
             {isSubmitting ? (
               <>
@@ -261,9 +265,9 @@ export function EditExpenseForm({ expense, onSave, onCancel, isSubmitting }: Edi
           <Button
             type="button"
             variant="outline"
-            size="sm"
             onClick={onCancel}
             disabled={isSubmitting}
+            className="flex-1 sm:flex-none"
           >
             <X className="h-3 w-3 mr-2" />
             Cancel
@@ -272,4 +276,31 @@ export function EditExpenseForm({ expense, onSave, onCancel, isSubmitting }: Edi
       </form>
     </div>
   )
+
+  // On mobile, render as a full-screen modal overlay
+  if (isMobile) {
+    return (
+      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div className="bg-background rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+          <div className="sticky top-0 bg-background border-b p-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Edit Expense</h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onCancel}
+              disabled={isSubmitting}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="p-4">
+            {formContent}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // On desktop, render inline as before
+  return formContent
 } 

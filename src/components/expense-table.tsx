@@ -259,13 +259,13 @@ export function ExpenseTable({ expenses, onEdit, onDelete, editingId, EditForm }
 
     return (
       <TableRow key={expense.id} id={`expense-${expense.id}`}>
-        <TableCell className="font-medium max-w-[120px] md:max-w-none truncate">
+        <TableCell className="font-medium max-w-[120px] md:max-w-none truncate text-xs md:text-base">
           {expense.title}
         </TableCell>
-        <TableCell className="font-mono text-sm md:text-base">
+        <TableCell className="font-mono text-xs md:text-sm">
           {formatCurrency(expense.amount)}
         </TableCell>
-        <TableCell className="text-sm md:text-base">
+        <TableCell className="text-xs md:text-sm">
           {formatDate(expense.date)}
         </TableCell>
         <TableCell>
