@@ -70,19 +70,19 @@ export default function Page() {
           <div className="text-2xl font-bold">
             {loading ? "..." : formatCurrency(stats.totalAmount)}
           </div>
-          <div className="text-sm text-muted-foreground">Total Expenses</div>
+          <div className="text-sm text-muted-foreground">Total Expenses (YTD)</div>
         </div>
         <div className="bg-muted/50 rounded-lg p-4 text-center">
           <div className="text-2xl font-bold">
             {loading ? "..." : stats.transactionCount}
           </div>
-          <div className="text-sm text-muted-foreground">Transactions</div>
+          <div className="text-sm text-muted-foreground">Transactions (YTD)</div>
         </div>
         <div className="bg-muted/50 rounded-lg p-4 text-center">
           <div className="text-2xl font-bold">
             {loading ? "..." : formatCurrency(stats.monthlyAverage)}
           </div>
-          <div className="text-sm text-muted-foreground">Monthly Average</div>
+          <div className="text-sm text-muted-foreground">Monthly Average (YTD)</div>
         </div>
       </div>
     </Layout>

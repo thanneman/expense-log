@@ -21,23 +21,25 @@ export function useExpenses() {
 
   // Calculate stats during render instead of storing in state
   const stats = useMemo(() => {
-    const totalAmount = expenses.reduce((sum, expense) => sum + expense.amount, 0)
-    const transactionCount = expenses.length
+    const now = new Date()
+    const startOfYear = new Date(now.getFullYear(), 0, 1) // January 1st of current year
     
-    // Calculate monthly average
+    // Filter expenses to only include year-to-date
+    const ytdExpenses = expenses.filter(expense => 
+      new Date(expense.date) >= startOfYear
+    )
+    
+    const totalAmount = ytdExpenses.reduce((sum, expense) => sum + expense.amount, 0)
+    const transactionCount = ytdExpenses.length
+    
+    // Calculate monthly average for year-to-date
     const monthlyAverage = (() => {
-      if (expenses.length === 0) return 0
+      if (ytdExpenses.length === 0) return 0
       
-      const now = new Date()
-      const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, 1)
-      const recentExpenses = expenses.filter(expense => 
-        new Date(expense.date) >= sixMonthsAgo
-      )
+      const currentMonth = now.getMonth() + 1 // +1 because getMonth() returns 0-11
+      const monthsElapsed = currentMonth
       
-      if (recentExpenses.length === 0) return 0
-      
-      const totalRecent = recentExpenses.reduce((sum, expense) => sum + expense.amount, 0)
-      return totalRecent / 6 // Average over 6 months
+      return totalAmount / monthsElapsed
     })()
     
     return {
