@@ -7,9 +7,10 @@ A modern expense tracking application built with Next.js, TypeScript, and Supaba
 - ✨ **Add Expenses**: Easily record new expenses with categories and notes
 - 📊 **View History**: Browse, search, and filter your expense history
 - 📈 **Real-time Stats**: See total expenses, transaction count, and monthly averages
-- 🎨 **Modern UI**: Beautiful, responsive design with dark mode support
+- 🎨 **Modern UI**: Beautiful, responsive design
 - 🔍 **Advanced Filtering**: Filter by date range, category, and search terms
 - 📱 **Mobile Friendly**: Optimized for all device sizes
+- 🏷️ **Category Management**: Create, edit, and manage expense categories with custom colors
 
 ## Tech Stack
 
@@ -17,7 +18,7 @@ A modern expense tracking application built with Next.js, TypeScript, and Supaba
 - **Styling**: Tailwind CSS, Radix UI components
 - **Database**: Supabase (PostgreSQL)
 - **Icons**: Lucide React
-- **State Management**: React hooks with custom useExpenses hook
+- **State Management**: React hooks with custom useExpenses and useCategories hooks
 
 ## Getting Started
 
@@ -31,7 +32,7 @@ A modern expense tracking application built with Next.js, TypeScript, and Supaba
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone git@github.com:thanneman/expense-log.git
 cd expense-log
 ```
 
@@ -62,7 +63,9 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 ## Database Schema
 
-The application uses a single `expenses` table with the following structure:
+The application uses two main tables: `expenses` and `categories`.
+
+### Expenses Table
 
 ```sql
 CREATE TABLE expenses (
@@ -71,11 +74,31 @@ CREATE TABLE expenses (
   amount DECIMAL(10,2) NOT NULL CHECK (amount >= 0),
   date DATE NOT NULL,
   category TEXT NOT NULL,
+  category_id UUID REFERENCES categories(id),
   note TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 ```
+
+### Categories Table
+
+```sql
+CREATE TABLE categories (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  color TEXT NOT NULL DEFAULT '#3B82F6',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
+The categories table includes:
+- **Default categories** with predefined colors
+- **Foreign key relationship** with expenses table
+- **Automatic timestamps** for created_at and updated_at
+- **Row Level Security (RLS)** enabled
+- **Protection against deletion** of categories in use
 
 ## Project Structure
 
@@ -83,21 +106,40 @@ CREATE TABLE expenses (
 src/
 ├── components/          # React components
 │   ├── ui/             # Reusable UI components
+│   │   ├── breadcrumb.tsx
+│   │   ├── button.tsx
+│   │   ├── category-badge.tsx
+│   │   ├── dropdown-menu.tsx
+│   │   ├── input.tsx
+│   │   ├── label.tsx
+│   │   ├── separator.tsx
+│   │   ├── sheet.tsx
+│   │   ├── sidebar.tsx
+│   │   ├── skeleton.tsx
+│   │   ├── table.tsx
+│   │   └── tooltip.tsx
+│   ├── app-sidebar.tsx
+│   ├── edit-expense-form.tsx
 │   ├── expense-table.tsx
-│   ├── layout.tsx
-│   └── app-sidebar.tsx
+│   └── layout.tsx
 ├── hooks/              # Custom React hooks
-│   └── use-expenses.ts
+│   ├── use-categories.ts
+│   ├── use-expenses.ts
+│   └── use-mobile.ts
 ├── lib/                # Utilities and configurations
-│   ├── supabase.ts     # Supabase client
-│   ├── expense-api.ts  # API utilities
+│   ├── category-api.ts # Category API utilities
+│   ├── category-colors.ts
 │   ├── config.ts       # App configuration
-│   └── category-colors.ts
+│   ├── expense-api.ts  # Expense API utilities
+│   ├── supabase.ts     # Supabase client
+│   └── utils.ts        # General utilities
 ├── pages/              # Next.js pages
-│   ├── index.tsx       # Home page
-│   ├── new.tsx         # Add expense page
+│   ├── _app.tsx        # App wrapper
+│   ├── _document.tsx   # Document wrapper
+│   ├── categories.tsx  # Categories management page
 │   ├── history.tsx     # Expense history page
-│   └── categories.tsx  # Categories page
+│   ├── index.tsx       # Home page
+│   └── new.tsx         # Add expense page
 └── styles/             # Global styles
     └── globals.css
 ```
@@ -109,47 +151,11 @@ src/
 - `npm run start` - Start production server
 - `npm run lint` - Run ESLint
 
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## License
-
-This project is open source and available under the [MIT License](LICENSE).
-
-## Support
-
-If you encounter any issues or have questions:
-
-1. Check the [Supabase Setup Guide](./SUPABASE_SETUP.md)
-2. Review the troubleshooting section in the setup guide
-3. Open an issue on GitHub
-
 ## Roadmap
 
 - [ ] User authentication and multi-user support
 - [ ] Data export functionality (CSV, PDF)
 - [ ] Budget tracking and alerts
 - [ ] Recurring expenses
-- [ ] Expense categories management
 - [ ] Real-time collaboration
 - [ ] Mobile app (React Native)
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn-pages-router) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/pages/building-your-application/deploying) for more details.

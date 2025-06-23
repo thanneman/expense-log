@@ -18,7 +18,7 @@ export function Layout({ children }: LayoutProps) {
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1" />
         </header>
-        <div className="flex flex-1 flex-col gap-6 p-6">
+        <div className="flex flex-1 flex-col gap-6 px-6 pt-6 pb-14">
           {children}
         </div>
       </SidebarInset>

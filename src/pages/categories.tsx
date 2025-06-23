@@ -167,7 +167,7 @@ export default function CategoriesPage() {
   return (
     <Layout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row space-y-3 md:space-y-0 md:items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Categories</h1>
             <p className="text-muted-foreground">
@@ -176,7 +176,7 @@ export default function CategoriesPage() {
           </div>
           {!isAdding && !editingId && (
             <Button onClick={() => setIsAdding(true)}>
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="h-4 w-4" />
               Add Category
             </Button>
           )}

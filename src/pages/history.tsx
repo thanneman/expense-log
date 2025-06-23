@@ -115,16 +115,16 @@ export default function HistoryPage() {
   return (
     <Layout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex md:items-center justify-between flex-col md:flex-row space-y-3 md:space-y-0">
+          <div className="md:mr-2">
             <h1 className="text-3xl font-bold tracking-tight">Expense History</h1>
             <p className="text-muted-foreground">
               View and manage your expense records. Search, filter, and sort to find what you need.
             </p>
           </div>
           <Button onClick={() => router.push('/new')}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add New Expense
+            <Plus className="h-4 w-4" />
+            Add Expense
           </Button>
         </div>
 
