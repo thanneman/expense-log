@@ -298,7 +298,7 @@ export default function NewExpensePage() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.push("/history")}
+              onClick={() => router.back()}
               disabled={isSubmitting}
             >
               Cancel

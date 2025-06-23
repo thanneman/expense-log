@@ -259,19 +259,25 @@ export function ExpenseTable({ expenses, onEdit, onDelete, editingId, EditForm }
 
     return (
       <TableRow key={expense.id} id={`expense-${expense.id}`}>
-        <TableCell className="font-medium">{expense.title}</TableCell>
-        <TableCell className="font-mono">{formatCurrency(expense.amount)}</TableCell>
-        <TableCell>{formatDate(expense.date)}</TableCell>
+        <TableCell className="font-medium max-w-[120px] md:max-w-none truncate">
+          {expense.title}
+        </TableCell>
+        <TableCell className="font-mono text-sm md:text-base">
+          {formatCurrency(expense.amount)}
+        </TableCell>
+        <TableCell className="text-sm md:text-base">
+          {formatDate(expense.date)}
+        </TableCell>
         <TableCell>
           <CategoryBadge category={expense.category} />
         </TableCell>
-        <TableCell className="max-w-[200px] truncate">
+        <TableCell className="hidden md:table-cell max-w-[200px] truncate">
           {expense.note || "-"}
         </TableCell>
         <TableCell>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              <Button variant="ghost" size="sm" className="h-10 w-10 md:h-8 md:w-8 p-0">
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -454,72 +460,74 @@ export function ExpenseTable({ expenses, onEdit, onDelete, editingId, EditForm }
       </div>
 
       {/* Table */}
-      <div className="border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <SortableHeader field="title">Title</SortableHeader>
-              <SortableHeader field="amount">Amount</SortableHeader>
-              <SortableHeader field="date">Date</SortableHeader>
-              <SortableHeader field="category">Category</SortableHeader>
-              <TableHead>Note</TableHead>
-              <TableHead className="w-[50px]">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {groupBy === 'none' ? (
-              // Regular table view
-              paginatedExpenses.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    {searchTerm || categoryFilter || dateRange.start || dateRange.end ? "No expenses found matching your filters." : "No expenses found."}
-                  </TableCell>
-                </TableRow>
+      <div className="border rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <SortableHeader field="title">Title</SortableHeader>
+                <SortableHeader field="amount">Amount</SortableHeader>
+                <SortableHeader field="date">Date</SortableHeader>
+                <SortableHeader field="category">Category</SortableHeader>
+                <TableHead className="hidden md:table-cell">Note</TableHead>
+                <TableHead className="w-[80px] md:w-[50px]">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {groupBy === 'none' ? (
+                // Regular table view
+                paginatedExpenses.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      {searchTerm || categoryFilter || dateRange.start || dateRange.end ? "No expenses found matching your filters." : "No expenses found."}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  paginatedExpenses.map(renderExpenseRow)
+                )
               ) : (
-                paginatedExpenses.map(renderExpenseRow)
-              )
-            ) : (
-              // Grouped view
-              Object.keys(groupedExpenses).length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    {searchTerm || categoryFilter || dateRange.start || dateRange.end ? "No expenses found matching your filters." : "No expenses found."}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                Object.entries(groupedExpenses).map(([groupKey, groupExpenses]) => {
-                  const groupTotal = groupExpenses.reduce((sum, expense) => sum + expense.amount, 0)
-                  
-                  // Get category color if grouping by category
-                  const categoryColor = groupBy === 'category' ? getCategoryColor(groupKey) : null
-                  
-                  return (
-                    <React.Fragment key={groupKey}>
-                      {/* Group Header */}
-                      <TableRow className={`${groupBy === 'category' ? `${categoryColor?.bgColor} ${categoryColor?.borderColor}` : 'bg-muted/30'}`}>
-                        <TableCell colSpan={4} className={`font-semibold ${groupBy === 'category' ? categoryColor?.textColor : ''}`}>
-                          {groupBy === 'category' && (
-                            <div className="flex items-center gap-2">
-                              <div className={`w-3 h-3 rounded-full ${categoryColor?.bgColor.replace('bg-', 'bg-').replace('/30', '')} border ${categoryColor?.borderColor}`} />
-                              {groupKey}
-                            </div>
-                          )}
-                          {groupBy !== 'category' && groupKey}
-                        </TableCell>
-                        <TableCell className="font-semibold text-right">
-                          {formatCurrency(groupTotal)}
-                        </TableCell>
-                        <TableCell></TableCell>
-                      </TableRow>
-                      {/* Group Expenses */}
-                      {groupExpenses.map(renderExpenseRow)}
-                    </React.Fragment>
-                  )
-                })
-              )
-            )}
-          </TableBody>
-        </Table>
+                // Grouped view
+                Object.keys(groupedExpenses).length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      {searchTerm || categoryFilter || dateRange.start || dateRange.end ? "No expenses found matching your filters." : "No expenses found."}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  Object.entries(groupedExpenses).map(([groupKey, groupExpenses]) => {
+                    const groupTotal = groupExpenses.reduce((sum, expense) => sum + expense.amount, 0)
+                    
+                    // Get category color if grouping by category
+                    const categoryColor = groupBy === 'category' ? getCategoryColor(groupKey) : null
+                    
+                    return (
+                      <React.Fragment key={groupKey}>
+                        {/* Group Header */}
+                        <TableRow className={`${groupBy === 'category' ? `${categoryColor?.bgColor} ${categoryColor?.borderColor}` : 'bg-muted/30'}`}>
+                          <TableCell colSpan={groupBy === 'category' ? 4 : 5} className={`font-semibold ${groupBy === 'category' ? categoryColor?.textColor : ''}`}>
+                            {groupBy === 'category' && (
+                              <div className="flex items-center gap-2">
+                                <div className={`w-3 h-3 rounded-full ${categoryColor?.bgColor.replace('bg-', 'bg-').replace('/30', '')} border ${categoryColor?.borderColor}`} />
+                                {groupKey}
+                              </div>
+                            )}
+                            {groupBy !== 'category' && groupKey}
+                          </TableCell>
+                          <TableCell className="font-semibold text-right">
+                            {formatCurrency(groupTotal)}
+                          </TableCell>
+                          <TableCell></TableCell>
+                        </TableRow>
+                        {/* Group Expenses */}
+                        {groupExpenses.map(renderExpenseRow)}
+                      </React.Fragment>
+                    )
+                  })
+                )
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       {/* Pagination - Only show when not grouped */}
