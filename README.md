@@ -157,5 +157,3 @@ src/
 - [ ] Data export functionality (CSV, PDF)
 - [ ] Budget tracking and alerts
 - [ ] Recurring expenses
-- [ ] Real-time collaboration
-- [ ] Mobile app (React Native)
